@@ -2,15 +2,20 @@
 {-# LANGUAGE BangPatterns #-}
 
 {-# LANGUAGE MagicHash #-}
-module Text.CharRanges where
+module CharRangesAlt where
 
+import           Data.Hashable
 import           Data.List
-import           Data.Set (Set)
-import qualified Data.Set as Set
-
+import           Data.HashSet (HashSet)
+import qualified Data.HashSet as Set
 
 data Range = Single {-# UNPACK #-} !Char
            | Range  {-# UNPACK #-} !Char {-# UNPACK #-} !Char
+
+instance Hashable Range where
+    hashWithSalt s !(Single a) = hashWithSalt s a
+    hashWithSalt s !(Range a _) = hashWithSalt s a
+
 
 instance Eq Range where
     (==) !(Single x) !(Single y) = x == y
@@ -19,7 +24,6 @@ instance Eq Range where
     (==) !(Range lx ux) !(Range ly uy) = (lx <= uy && ly <= ux)
                                          || (lx <= uy && ly <= ux)
 
-
 instance Ord Range where
 	(<=) !(Single x)  !(Single y)  = x <= y
 	(<=) !(Single x)  !(Range y _) = x <= y
@@ -27,8 +31,8 @@ instance Ord Range where
 	(<=) !(Range _ x) !(Range y _) = x <= y
 
 -- | Allows quick lookups using ranges.
-toSet :: [Range] -> Set Range
-toSet = Set.fromDistinctAscList . prepareRanges
+toSet :: [Range] -> HashSet Range
+toSet = Set.fromList . prepareRanges
 
 
 prepareRanges :: [Range] -> [Range]

@@ -17,8 +17,7 @@ Library
               , text-icu      >=0.6
               , text          >=0.9
  Exposed-modules: Text.StringPrep
-                , Text.NamePrep
-                , Text.SaslPrep
+                , Text.StringPrep.Profiles
  Other-modules:   Text.CharRanges
  ghc-options: -O2 -Wall -fno-warn-name-shadowing
 
@@ -35,3 +34,17 @@ test-suite tests
  main-is:     Tests.hs
  Other-modules: Ranges
  hs-source-dirs: tests .
+
+benchmark benchmarks
+  type: exitcode-stdio-1.0
+  build-depends: base
+               , criterion
+               , containers    >=0.2
+               , text-icu      >=0.6
+               , text          >=0.9
+               , array
+               , unordered-containers
+               , hashable
+  hs-source-dirs: bench .
+  main-is: Bench.hs
+  ghc-options: -O2

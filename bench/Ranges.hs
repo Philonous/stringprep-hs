@@ -1,8 +1,11 @@
+{-# LANGUAGE PatternGuards #-}
+{-# LANGUAGE PatternGuards #-}
 module Ranges
 where
 
 import Data.Set (Set)
 import qualified Data.Set as Set
+import Data.List (sort)
 
 data Ord a => Range a = Single !a | Range !a !a
 instance (Ord a, Show a) => Show (Range a) where
@@ -17,8 +20,7 @@ instance (Ord a) => Eq (Range a) where
         (Single x) == (Single y) = x == y
         (Single a) == (Range x y) = x <= a && a <= y
         (Range x y) == (Single a) = x <= a && a <= y
-        (Range lx ux) == (Range ly uy) = (lx <= uy && ux >= ly)
-
+        (Range lx ux) == (Range ly uy) = (lx <= uy && ux >= ly) || (ly <= ux && uy >= lx)
 
 instance (Ord a) => Ord (Range a) where
         (Single x) <= (Single y) = x <= y
@@ -57,7 +59,8 @@ mergeRange x y =
 minMax :: (Ord a) => Range a -> Range a -> Range a
 minMax (Range lx ux) (Range ly uy) = Range (min lx ly) (max ux uy)
 minMax (Single _) y = y
-minMax x@(Range _ _) (Single _) = x
+minMax x (Single _) = x
+{-# INLINE minMax #-}
 
 -- | Allows quick lookups using ranges.
 toSet :: (Ord a) => Ranges a -> Set (Range a)
@@ -71,3 +74,25 @@ mergeRanges [] y = [y]
 mergeRanges (x:xs) y = case mergeRange x y of
                 Right z -> mergeRanges xs z
                 Left x -> x : (mergeRanges xs y)
+
+
+newToSet :: [Range Char] -> Set (Range Char)
+newToSet = Set.fromDistinctAscList . prepareRanges
+
+
+prepareRanges :: [Range Char] -> [Range Char]
+prepareRanges =  go . sort
+  where
+    go (r1:r2:rs) | Just r' <- maybeMergeRanges r1 r2 = go (r':rs)
+                  | rss@(r3:rs') <- go (r2:rs) =
+        case maybeMergeRanges r1 r3 of
+            Nothing -> r1:rss
+            Just r' -> r':rs'
+    go rs = rs
+{-# INLINE prepareRanges #-}
+
+maybeMergeRanges :: Range Char -> Range Char -> Maybe (Range Char)
+maybeMergeRanges x y = if x == y -- overlap
+                       then Just $ minMax x y
+                       else Nothing
+{-# INLINE maybeMergeRanges #-}
